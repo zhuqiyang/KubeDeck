@@ -37,6 +37,32 @@ cd kubedeck
 
 构建产物是 `work/kubedeck-linux-amd64`，前端已嵌入二进制。
 
+## 构建容器镜像
+
+Dockerfile 使用三阶段构建：
+
+1. `node:22-alpine` 安装依赖并构建前端。
+2. `golang:1.24-alpine` 编译 CGO 关闭的静态二进制。
+3. `distroless/static-debian12:nonroot` 作为最终运行镜像。
+
+```bash
+docker build \
+  --build-arg VERSION=0.1.0 \
+  -t ghcr.io/zhuqiyang/kubedeck:0.1.0 .
+```
+
+构建多架构镜像并推送：
+
+```bash
+docker buildx build \
+  --platform linux/amd64,linux/arm64 \
+  --build-arg VERSION=0.1.0 \
+  -t ghcr.io/zhuqiyang/kubedeck:0.1.0 \
+  --push .
+```
+
+最终镜像直接以 `/kubedeck` 作为 PID 1，不包含 Node.js、Go、Nginx 或 Shell。
+
 ## 部署
 
 当前部署使用单节点 `hostPath`，把二进制放到节点 `/opt/kubedeck`：
